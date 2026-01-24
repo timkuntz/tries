@@ -1,0 +1,14 @@
+[project]
+name = "2026-01-24-codex-less"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "pypdf>=6.6.0",
+    "pytest>=9.0.2",
+    "spacy>=3.8.11",
+]
+
+[project.scripts]
+less = "less.cli:main"

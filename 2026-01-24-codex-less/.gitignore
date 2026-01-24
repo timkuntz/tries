@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+dist/
+build/
+*.egg-info/
+.eggs/
+.tox/
+.nox/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# Editors/OS
+.DS_Store
+*.swp
+
+# uv
+.uv/
