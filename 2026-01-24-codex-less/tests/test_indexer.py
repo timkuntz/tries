@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from less import cli
 from less import indexer
 
@@ -34,3 +36,14 @@ def test_cli_index_passes_pdfs_to_indexer(tmp_path, capsys, monkeypatch):
     assert exit_code == 0
     assert [path.name for path in captured_paths] == ["report.pdf", "scan.PDF"]
     assert "Found 2 PDF files." in captured.out
+
+
+def test_extract_text_from_pdf():
+    pdf_path = Path(__file__).parent / "ai-companies.pdf"
+
+    text = indexer.extract_text(pdf_path)
+
+    assert "Top Generative AI Solution Providers" in text
+    assert "OpenAI" in text
+    assert "immediate productivity" in text
+    assert "long-context" in text

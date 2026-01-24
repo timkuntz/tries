@@ -3,6 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Iterable
 
+from pypdf import PdfReader
+
 
 def list_pdfs(root: Path) -> list[Path]:
     pdfs = [
@@ -17,3 +19,8 @@ def index_pdfs(paths: Iterable[Path]) -> None:
     _ = list(paths)
     print("Embedding and storing vectors...")
 
+
+def extract_text(path: Path) -> str:
+    reader = PdfReader(path)
+    pages = [page.extract_text() or "" for page in reader.pages]
+    return "\n".join(pages)
