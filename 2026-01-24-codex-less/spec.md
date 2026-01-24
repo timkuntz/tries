@@ -19,3 +19,5 @@ LESS is a command line tool with just two commands.
 - 2026-01-24: Added `less` CLI entrypoint and basic CLI scaffolding with tests.
 - 2026-01-24: Added `bin/less` bash wrapper for running the CLI.
 - 2026-01-24: Added `.gitignore` for typical Python and tooling artifacts.
+- 2026-01-24: Added PDF discovery and indexing plumbing with a CLI test.
+- 2026-01-24: Split indexer logic and tests into dedicated modules.

@@ -2,7 +2,10 @@ from __future__ import annotations
 
 import argparse
 import sys
+from pathlib import Path
 from typing import Sequence
+
+from . import indexer
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -28,9 +31,12 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def _run_index(path: str) -> int:
-    print(f"Indexing PDFs under: {path}")
+    root = Path(path)
+    print(f"Indexing PDFs under: {root}")
     print("Scanning for PDF files...")
-    print("Embedding and storing vectors...")
+    pdfs = indexer.list_pdfs(root)
+    print(f"Found {len(pdfs)} PDF files.")
+    indexer.index_pdfs(pdfs)
     print("Index complete.")
     return 0
 
