@@ -1,4 +1,5 @@
 from pathlib import Path
+import re
 
 from less import cli
 from less import indexer
@@ -47,3 +48,50 @@ def test_extract_text_from_pdf():
     assert "OpenAI" in text
     assert "immediate productivity" in text
     assert "long-context" in text
+
+
+def test_chunk_text_keeps_sentence_boundaries():
+    sentence = "A" * 260 + "."
+    text = " ".join([sentence, sentence, sentence, sentence])
+
+    chunks = indexer.chunk_text(
+        text,
+        max_chars=2000,
+        min_chars=500,
+        nlp=_fake_nlp(),
+    )
+
+    assert chunks == [f"{sentence} {sentence}", f"{sentence} {sentence}"]
+
+
+def test_chunk_text_respects_max_when_sentence_exceeds():
+    long_sentence = "B" * 2100 + "."
+    text = f"{long_sentence} Short sentence."
+
+    chunks = indexer.chunk_text(
+        text,
+        max_chars=2000,
+        min_chars=500,
+        nlp=_fake_nlp(),
+    )
+
+    assert chunks[0] == long_sentence
+    assert chunks[1] == "Short sentence."
+
+
+def _fake_nlp():
+    class _Sent:
+        def __init__(self, text: str) -> None:
+            self.text = text
+
+    class _Doc:
+        def __init__(self, sents) -> None:
+            self.sents = sents
+
+    class _NLP:
+        def __call__(self, text: str) -> _Doc:
+            matches = re.findall(r"[^.!?]+[.!?]", text)
+            sentences = [match.strip() for match in matches]
+            return _Doc([_Sent(sentence) for sentence in sentences])
+
+    return _NLP()

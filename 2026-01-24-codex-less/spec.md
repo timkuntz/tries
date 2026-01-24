@@ -22,3 +22,6 @@ LESS is a command line tool with just two commands.
 - 2026-01-24: Added PDF discovery and indexing plumbing with a CLI test.
 - 2026-01-24: Split indexer logic and tests into dedicated modules.
 - 2026-01-24: Added PDF text extraction with indexer test coverage.
+- 2026-01-24: Added sentence-aware chunking with max/target sizing.
+- 2026-01-24: Deferred spaCy import and added chunking tests with a fake NLP.
+- 2026-01-24: Adjusted chunking to honor a 500-char minimum and 2000-char maximum.
