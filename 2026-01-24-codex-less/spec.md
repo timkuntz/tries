@@ -29,3 +29,4 @@ LESS is a command line tool with just two commands.
 - 2026-01-24: Updated Chroma dependencies and error guidance for runtime imports.
 - 2026-01-24: Lowered Python requirement to 3.13 for chromadb/onnxruntime support.
 - 2026-01-24: Enabled uv packaging config and setuptools build system for scripts.
+- 2026-01-24: Ignored local Chroma persistence directory `.less/`.
