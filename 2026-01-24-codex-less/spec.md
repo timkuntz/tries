@@ -25,3 +25,7 @@ LESS is a command line tool with just two commands.
 - 2026-01-24: Added sentence-aware chunking with max/target sizing.
 - 2026-01-24: Deferred spaCy import and added chunking tests with a fake NLP.
 - 2026-01-24: Adjusted chunking to honor a 500-char minimum and 2000-char maximum.
+- 2026-01-24: Added Chroma storage pipeline and sentence-transformer embedding integration.
+- 2026-01-24: Updated Chroma dependencies and error guidance for runtime imports.
+- 2026-01-24: Lowered Python requirement to 3.13 for chromadb/onnxruntime support.
+- 2026-01-24: Enabled uv packaging config and setuptools build system for scripts.

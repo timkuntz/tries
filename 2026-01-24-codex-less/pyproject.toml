@@ -3,13 +3,22 @@ name = "2026-01-24-codex-less"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.14"
+requires-python = ">=3.13,<3.14"
 dependencies = [
-    "chromadb>=0.3.23",
+    "chromadb>=0.5.0",
+    "pydantic-settings>=2.0.0",
     "pypdf>=6.6.0",
     "pytest>=9.0.2",
+    "sentence-transformers>=3.3.1",
     "spacy>=3.8.11",
 ]
 
 [project.scripts]
 less = "less.cli:main"
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.uv]
+package = true
