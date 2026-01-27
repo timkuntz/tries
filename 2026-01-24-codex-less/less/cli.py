@@ -5,7 +5,9 @@ import sys
 from pathlib import Path
 from typing import Sequence
 
-from . import indexer
+from .adapters import chromadb_store, filesystem, pypdf_extractor, spacy_chunker
+from .adapters.sentence_transformer_embedder import SentenceTransformerEmbedder
+from .core.use_cases import IndexDirectoryUseCase, IndexPdfUseCase
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -30,13 +32,40 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def build_index_use_case() -> IndexDirectoryUseCase:
+    extractor = pypdf_extractor.PypdfExtractor()
+    chunker = spacy_chunker.SpacySentenceChunker(min_chars=500, max_chars=2000)
+    embedder = SentenceTransformerEmbedder()
+    collection = chromadb_store.get_collection(
+        "less",
+        persist_path=Path(".less/chroma"),
+    )
+    vector_store = chromadb_store.ChromaVectorStore(collection)
+    pdf_use_case = IndexPdfUseCase(
+        extractor,
+        chunker,
+        embedder,
+        vector_store,
+        min_chars=500,
+        max_chars=2000,
+    )
+    return IndexDirectoryUseCase(pdf_use_case)
+
+
 def _run_index(path: str) -> int:
     root = Path(path)
     print(f"Indexing PDFs under: {root}")
     print("Scanning for PDF files...")
-    pdfs = indexer.list_pdfs(root)
+    pdfs = filesystem.list_pdfs(root)
     print(f"Found {len(pdfs)} PDF files.")
-    indexer.index_pdfs(pdfs)
+    if not pdfs:
+        print("Embedding and storing 0 chunks...")
+        print("Index complete.")
+        return 0
+
+    index_use_case = build_index_use_case()
+    stored = index_use_case.index_paths(pdfs)
+    print(f"Embedding and storing {stored} chunks...")
     print("Index complete.")
     return 0
 

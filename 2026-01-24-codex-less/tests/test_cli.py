@@ -17,18 +17,24 @@ def test_cli_commands(args, expected, capsys):
     assert expected in captured.out
 
 
-def test_cli_index_command_uses_indexer(tmp_path, monkeypatch, capsys):
-    captured_paths = {}
+def test_cli_index_command_uses_use_case(tmp_path, monkeypatch, capsys):
+    captured = {}
 
-    def fake_index_pdfs(paths, **_kwargs):
-        captured_paths["paths"] = list(paths)
-        return 0
+    def fake_list_pdfs(_root):
+        return [tmp_path / "sample.pdf"]
 
-    monkeypatch.setattr(cli.indexer, "index_pdfs", fake_index_pdfs)
+    class _FakeUseCase:
+        def index_paths(self, paths):
+            captured["paths"] = list(paths)
+            return 3
+
+    monkeypatch.setattr(cli.filesystem, "list_pdfs", fake_list_pdfs)
+    monkeypatch.setattr(cli, "build_index_use_case", lambda: _FakeUseCase())
 
     exit_code = cli.main(["index", str(tmp_path)])
-    captured = capsys.readouterr()
+    output = capsys.readouterr()
 
     assert exit_code == 0
-    assert "Found 0 PDF files." in captured.out
-    assert captured_paths["paths"] == []
+    assert "Found 1 PDF files." in output.out
+    assert "Embedding and storing 3 chunks..." in output.out
+    assert captured["paths"] == [tmp_path / "sample.pdf"]
