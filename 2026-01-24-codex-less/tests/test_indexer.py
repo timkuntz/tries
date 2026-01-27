@@ -1,29 +1,26 @@
 from pathlib import Path
+import pytest
 import re
 
 from less import cli
 from less import indexer
 
-
-def test_list_pdfs_finds_case_insensitive_pdfs(tmp_path):
+@pytest.fixture
+def created_pdfs(tmp_path):
     (tmp_path / "notes.txt").write_text("nope")
     (tmp_path / "report.pdf").write_text("pdf")
     nested = tmp_path / "nested"
     nested.mkdir()
     (nested / "scan.PDF").write_text("pdf")
+    return ["report.pdf", "scan.PDF"]
 
+def test_list_pdfs_finds_case_insensitive_pdfs(created_pdfs, tmp_path):
     pdfs = indexer.list_pdfs(tmp_path)
 
-    assert [path.name for path in pdfs] == ["report.pdf", "scan.PDF"]
+    assert [path.name for path in pdfs] == created_pdfs
 
 
-def test_cli_index_passes_pdfs_to_indexer(tmp_path, capsys, monkeypatch):
-    (tmp_path / "notes.txt").write_text("nope")
-    (tmp_path / "report.pdf").write_text("pdf")
-    nested = tmp_path / "nested"
-    nested.mkdir()
-    (nested / "scan.PDF").write_text("pdf")
-
+def test_cli_index_passes_pdfs_to_indexer(created_pdfs, tmp_path, capsys, monkeypatch):
     captured_paths = []
 
     def fake_index_pdfs(paths):
@@ -35,7 +32,7 @@ def test_cli_index_passes_pdfs_to_indexer(tmp_path, capsys, monkeypatch):
     captured = capsys.readouterr()
 
     assert exit_code == 0
-    assert [path.name for path in captured_paths] == ["report.pdf", "scan.PDF"]
+    assert [path.name for path in captured_paths] == created_pdfs
     assert "Found 2 PDF files." in captured.out
 
 

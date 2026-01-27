@@ -36,6 +36,7 @@ def index_pdfs(
 
     pdfs = list(paths)
     if embedder is None:
+        print("Using SentenceTransformerEmbedder")
         embedder = SentenceTransformerEmbedder()
 
     collection = vector_store.get_collection(
