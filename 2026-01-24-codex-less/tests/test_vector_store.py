@@ -22,7 +22,8 @@ def test_index_pdf_stores_chunks_in_vector_db():
     assert len(chunks) > 0
     assert collection.count() == len(chunks)
     assert any("OpenAI" in doc for doc in stored["documents"])
-    assert all(meta["source_path"] == str(pdf_path) for meta in stored["metadatas"])
+    assert all(meta["pdf_path"] == str(pdf_path) for meta in stored["metadatas"])
+    assert all(meta["pdf_name"] == pdf_path.name for meta in stored["metadatas"])
     assert all("page_number" in meta for meta in stored["metadatas"])
 
 

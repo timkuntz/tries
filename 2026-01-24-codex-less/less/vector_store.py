@@ -76,7 +76,8 @@ def build_chunks_from_pages(
         for chunk in page_chunks:
             chunk_id = f"{source_path}::p{page_number}::c{chunk_index}"
             metadata = {
-                "source_path": str(source_path),
+                "pdf_name": source_path.name,
+                "pdf_path": str(source_path),
                 "page_number": page_number,
                 "chunk_index": chunk_index,
             }

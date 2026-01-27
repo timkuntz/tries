@@ -32,3 +32,4 @@ LESS is a command line tool with just two commands.
 - 2026-01-24: Ignored local Chroma persistence directory `.less/`.
 - 2026-01-24: Moved vector store logic into `less/vector_store.py`.
 - 2026-01-24: Split vector store tests into `tests/test_vector_store.py`.
+- 2026-01-24: Store PDF name/path metadata for each chunk.
