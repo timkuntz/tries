@@ -9,7 +9,14 @@ from less import cli
         (["search", "demo query"], "Searching for: demo query"),
     ],
 )
-def test_cli_commands(args, expected, capsys):
+def test_cli_commands(args, expected, capsys, monkeypatch):
+    if args[0] == "search":
+        class _FakeSearchUseCase:
+            def search(self, _query):
+                return []
+
+        monkeypatch.setattr(cli, "build_search_use_case", lambda: _FakeSearchUseCase())
+
     exit_code = cli.main(args)
     captured = capsys.readouterr()
 
@@ -38,3 +45,31 @@ def test_cli_index_command_uses_use_case(tmp_path, monkeypatch, capsys):
     assert "Found 1 PDF files." in output.out
     assert "Embedding and storing 3 chunks..." in output.out
     assert captured["paths"] == [tmp_path / "sample.pdf"]
+
+
+def test_cli_search_command_uses_use_case(monkeypatch, capsys):
+    class _FakeSearchUseCase:
+        def search(self, query):
+            return [
+                _FakeResult(
+                    text="Example result.",
+                    metadata={"pdf_name": "sample.pdf", "page_number": 2},
+                    score=0.1234,
+                )
+            ]
+
+    monkeypatch.setattr(cli, "build_search_use_case", lambda: _FakeSearchUseCase())
+
+    exit_code = cli.main(["search", "demo query"])
+    output = capsys.readouterr()
+
+    assert exit_code == 0
+    assert "Found 1 results." in output.out
+    assert "sample.pdf (page 2) score=0.1234" in output.out
+
+
+class _FakeResult:
+    def __init__(self, text, metadata, score):
+        self.text = text
+        self.metadata = metadata
+        self.score = score

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from .models import Chunk
+from .models import Chunk, SearchResult
 from .ports import Embedder, PdfTextExtractor, SentenceChunker, VectorStore
 
 
@@ -87,3 +87,22 @@ class IndexDirectoryUseCase:
         for path in paths:
             total += len(self._pdf_use_case.index_pdf(path))
         return total
+
+
+class SearchUseCase:
+    def __init__(
+        self,
+        embedder: Embedder,
+        vector_store: VectorStore,
+        *,
+        top_k: int = 5,
+    ) -> None:
+        if top_k <= 0:
+            raise ValueError("top_k must be positive.")
+        self._embedder = embedder
+        self._vector_store = vector_store
+        self._top_k = top_k
+
+    def search(self, query: str) -> list[SearchResult]:
+        embeddings = self._embedder.encode([query])
+        return self._vector_store.query(embeddings[0], top_k=self._top_k)

@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from ..core.models import Chunk
+from ..core.models import Chunk, SearchResult
 from ..core.ports import VectorStore
 
 if TYPE_CHECKING:
@@ -59,3 +59,18 @@ class ChromaVectorStore(VectorStore):
             metadatas=[chunk.metadata for chunk in chunks],
             embeddings=embeddings,
         )
+
+    def query(self, embedding: list[float], *, top_k: int) -> list[SearchResult]:
+        result = self._collection.query(
+            query_embeddings=[embedding],
+            n_results=top_k,
+            include=["documents", "metadatas", "distances"],
+        )
+        documents = result.get("documents", [[]])[0]
+        metadatas = result.get("metadatas", [[]])[0]
+        distances = result.get("distances", [[]])[0]
+        results: list[SearchResult] = []
+        for doc, meta, distance in zip(documents, metadatas, distances, strict=False):
+            score = float(distance) if distance is not None else 0.0
+            results.append(SearchResult(text=doc, metadata=meta, score=score))
+        return results

@@ -7,7 +7,7 @@ from typing import Sequence
 
 from .adapters import chromadb_store, filesystem, pypdf_extractor, spacy_chunker
 from .adapters.sentence_transformer_embedder import SentenceTransformerEmbedder
-from .core.use_cases import IndexDirectoryUseCase, IndexPdfUseCase
+from .core.use_cases import IndexDirectoryUseCase, IndexPdfUseCase, SearchUseCase
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -52,6 +52,16 @@ def build_index_use_case() -> IndexDirectoryUseCase:
     return IndexDirectoryUseCase(pdf_use_case)
 
 
+def build_search_use_case() -> SearchUseCase:
+    embedder = SentenceTransformerEmbedder()
+    collection = chromadb_store.get_collection(
+        "less",
+        persist_path=Path(".less/chroma"),
+    )
+    vector_store = chromadb_store.ChromaVectorStore(collection)
+    return SearchUseCase(embedder, vector_store, top_k=5)
+
+
 def _run_index(path: str) -> int:
     root = Path(path)
     print(f"Indexing PDFs under: {root}")
@@ -72,8 +82,16 @@ def _run_index(path: str) -> int:
 
 def _run_search(query: str) -> int:
     print(f"Searching for: {query}")
-    print("Retrieving relevant chunks...")
-    print("Ranking results...")
+    print("Embedding query...")
+    search_use_case = build_search_use_case()
+    print("Querying vector store...")
+    results = search_use_case.search(query)
+    print(f"Found {len(results)} results.")
+    for index, result in enumerate(results, start=1):
+        source = result.metadata.get("pdf_name", "unknown")
+        page = result.metadata.get("page_number", "?")
+        print(f"{index}. {source} (page {page}) score={result.score:.4f}")
+        print(result.text)
     print("Search complete.")
     return 0
 

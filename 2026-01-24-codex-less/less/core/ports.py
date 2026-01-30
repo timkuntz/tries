@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Protocol
 
-from .models import Chunk
+from .models import Chunk, SearchResult
 
 
 class PdfTextExtractor(Protocol):
@@ -23,4 +23,7 @@ class Embedder(Protocol):
 
 class VectorStore(Protocol):
     def add_chunks(self, chunks: list[Chunk], embeddings: list[list[float]]) -> None:
+        raise NotImplementedError
+
+    def query(self, embedding: list[float], *, top_k: int) -> list[SearchResult]:
         raise NotImplementedError
