@@ -19,10 +19,10 @@ export OPENAI_API_KEY=your-key-here
 Then run:
 
 ```bash
-./claude.rb
+./agent.rb
 ```
 
 ## Project Structure
 
 - `lib/` - Source code
-- `claude.rb` - OpenAI-powered coding assistant with file tools
+- `agent.rb` - OpenAI-powered coding assistant with file tools
