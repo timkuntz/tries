@@ -11,15 +11,9 @@ module ClaudeCLI
   ASSISTANT_COLOR = "\u001b[93m"
   RESET_COLOR = "\u001b[0m"
 
-  # Resolve absolute path from string
-  def self.resolve_abs_path(path_str)
-    path = Pathname.new(path_str).expand_path
-    path.absolute? ? path : (Pathname.pwd / path).realpath
-  end
-
   # Tool: Read file
   def self.read_file_tool(filename:)
-    full_path = resolve_abs_path(filename)
+    full_path = Pathname.new(filename).expand_path
     puts full_path
     content = File.read(full_path)
     {
@@ -28,24 +22,27 @@ module ClaudeCLI
     }
   end
 
-  # Tool: List files
-  def self.list_files_tool(path:)
-    full_path = resolve_abs_path(path)
-    all_files = full_path.children.map do |item|
+  def self.children(pathname)
+    pathname.children.map do |item|
       {
         filename: item.basename.to_s,
         type: item.file? ? 'file' : 'dir'
       }
     end
+  end
+
+  # Tool: List files
+  def self.list_files_tool(path:)
+    full_path = Pathname.new(path).expand_path
     {
       path: full_path.to_s,
-      files: all_files
+      files: children(full_path)
     }
   end
 
   # Tool: Edit file
   def self.edit_file_tool(path:, old_str:, new_str:)
-    full_path = resolve_abs_path(path)
+    full_path = Pathname.new(path).expand_path
 
     if old_str.empty?
       File.write(full_path, new_str)
@@ -73,36 +70,37 @@ module ClaudeCLI
 
   # Tool registry
   TOOL_REGISTRY = {
-    'read_file' => method(:read_file_tool),
-    'list_files' => method(:list_files_tool),
-    'edit_file' => method(:edit_file_tool)
+    'read_file' => {
+      method: method(:read_file_tool),
+      doc: 'Gets the full content of a file provided by the user.'
+    },
+    'list_files' => {
+      method: method(:list_files_tool),
+      doc: 'Lists the files in a directory provided by the user.'
+    },
+    'edit_file' => {
+      method: method(:edit_file_tool),
+      doc: 'Replaces first occurrence of old_str with new_str in file. If old_str is empty, create/overwrite.'
+    }
   }.freeze
 
   # Get tool string representation
   def self.get_tool_str_representation(tool_name)
-    tool_method = TOOL_REGISTRY[tool_name]
-    params = tool_method.parameters.map { |type, name| "#{name}: ..." }.join(', ')
+    doc = TOOL_REGISTRY[tool_name][:doc]
+    tool_method = TOOL_REGISTRY[tool_name][:method]
+    params = tool_method.parameters.map { |_type, name| "#{name}: ..." }.join(', ')
 
-    doc = case tool_name
-          when 'read_file'
-            'Gets the full content of a file provided by the user.'
-          when 'list_files'
-            'Lists the files in a directory provided by the user.'
-          when 'edit_file'
-            'Replaces first occurrence of old_str with new_str in file. If old_str is empty, create/overwrite file with new_str.'
-          end
-
-    "
-  Name: #{tool_name}
-  Description: #{doc}
-  Signature: (#{params})
-  "
+    <<~TOOL_STR
+      Name: #{tool_name}
+      Description: #{doc}
+      Signature: (#{params})
+    TOOL_STR
   end
 
   # System prompt
-  def self.get_full_system_prompt
+  def self.full_system_prompt
     tool_str_repr = TOOL_REGISTRY.keys.map do |tool_name|
-      "TOOL\n===" + get_tool_str_representation(tool_name) + "\n" + ('=' * 15)
+      "TOOL\n====\n#{get_tool_str_representation(tool_name)}#{'=' * 15}"
     end.join("\n")
 
     <<~PROMPT
@@ -115,6 +113,12 @@ module ClaudeCLI
       Use compact single-line JSON with double quotes. After receiving a tool_result(...) message, continue the task.
       If no tool is needed, respond normally.
     PROMPT
+
+    # Interesting that these additional instructions break how the LLM calls the "list_files" tool.
+    # When referencing files, if a path is not specified and is not absolute,
+    # assume it is relative to the current working directory.
+    # Use the path "./" to refer to the current working directory."
+    # If you need to check if a file exists, use the list_files tool.
   end
 
   # Extract tool invocations from text
@@ -140,30 +144,34 @@ module ClaudeCLI
     invocations
   end
 
+  def self.messages(conversation)
+    conversation.map do |msg|
+      {
+        role: msg[:role],
+        content: msg[:content]
+      }
+    end
+  end
+
   # Execute LLM call
   def self.execute_llm_call(openai_client, conversation)
-    messages = conversation.map do |msg|
-      { role: msg[:role], content: msg[:content] }
-    end
-
     response = openai_client.chat(
       parameters: {
         model: 'gpt-4o',
         max_tokens: 2000,
-        messages: messages
+        messages: messages(conversation)
       }
     )
-
     response.dig('choices', 0, 'message', 'content')
   end
 
   # Main agent loop
   def self.run_coding_agent_loop(openai_client)
-    puts get_full_system_prompt
+    puts full_system_prompt
 
     conversation = [{
       role: 'system',
-      content: get_full_system_prompt
+      content: full_system_prompt
     }]
 
     loop do
@@ -180,6 +188,7 @@ module ClaudeCLI
       loop do
         assistant_response = execute_llm_call(openai_client, conversation)
         tool_invocations = extract_tool_invocations(assistant_response)
+        puts "Extracted tool invocations: #{tool_invocations}"
 
         if tool_invocations.empty?
           puts "#{ASSISTANT_COLOR}Assistant:#{RESET_COLOR} #{assistant_response}"
@@ -191,7 +200,7 @@ module ClaudeCLI
         end
 
         tool_invocations.each do |name, args|
-          tool = TOOL_REGISTRY[name]
+          tool = TOOL_REGISTRY[name][:method]
           puts "#{name} #{args}"
           resp = tool.call(**args)
           conversation << {
