@@ -10,7 +10,10 @@ loader.setup # ready!
 loader.reload
 
 def main
-  Agent::Cli.run
+  Agent::Cli.run do |chunk|
+    # The block receives RubyLLM::Chunk objects as they arrive
+    print chunk.content # Print content fragment immediately
+  end
 end
 
 exit main if __FILE__ == $PROGRAM_NAME

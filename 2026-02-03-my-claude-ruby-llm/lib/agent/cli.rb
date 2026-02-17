@@ -68,6 +68,9 @@ module Agent
         config.bedrock_session_token = ENV.fetch('AWS_SESSION_TOKEN')
         config.bedrock_region = ENV.fetch('AWS_REGION', 'us-west-2')
         config.default_model = ENV.fetch('LLM_MODEL', 'us.anthropic.claude-sonnet-4-5-20250929-v1:0')
+
+        config.log_file = 'ruby_llm.log'
+        config.log_level = :debug # :debug, :info, :warn
       end
       run_coding_agent_loop
       0
